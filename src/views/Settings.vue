@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import gsap from 'gsap'
 import UiTabs from '@/components/ui/Tabs.vue'
 import GeneralTab from './settings/GeneralTab.vue'
@@ -61,6 +61,17 @@ const settings = reactive({
   windowHeight: 720,
 })
 
+watch(
+  [themeMode, primaryColor, blurAmount, backgroundImagePath],
+  ([mode, color, blur, backgroundPath]) => {
+    settings.mode = mode
+    settings.primaryColor = color
+    settings.blurAmount = blur
+    settings.backgroundImage = backgroundPath
+  },
+  { immediate: true },
+)
+
 const handleUpdateSettings = (updates: any) => {
   Object.assign(settings, updates)
 }
@@ -87,7 +98,8 @@ const initSettings = async () => {
       settings.javaPath = data.java_path || ''
       settings.memory = data.memory_size || 4096
       if (data.minecraft_paths?.length) {
-        settings.gamePath = data.minecraft_paths[0]
+        const firstPath = data.minecraft_paths[0]
+        settings.gamePath = typeof firstPath === 'string' ? firstPath : firstPath.path
       }
     }
 

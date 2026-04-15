@@ -1,10 +1,10 @@
 <template>
   <aside class="sidebar" :class="{ expanded: isExpanded }">
-    <button class="toggle-btn" @click="toggleSidebar" title="切换侧边栏">
+    <button class="toggle-btn" @click="toggleSidebar" title="切换侧边栏" aria-label="切换侧边栏">
       <i class="icon icon-menu" />
     </button>
     
-    <nav class="sidebar-nav" @mouseleave="handleMouseLeave">
+    <nav class="sidebar-nav" aria-label="主导航" @mouseleave="handleMouseLeave">
       <div class="active-background" ref="backgroundRef"></div>
       <div class="active-indicator" ref="indicatorRef"></div>
       
@@ -23,7 +23,7 @@
     </nav>
     
     <div class="sidebar-footer">
-      <button class="menu-item" @click="openHelp" title="帮助">
+      <button class="menu-item" @click="openHelp" title="帮助" aria-label="帮助">
         <i class="icon icon-help" />
         <span class="text">帮助</span>
       </button>

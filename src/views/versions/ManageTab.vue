@@ -20,7 +20,11 @@
             v-for="(item, index) in gamePaths"
             :key="index"
             :class="['path-item', { active: selectedPathIndex === index }]"
+            role="button"
+            tabindex="0"
+            :aria-pressed="selectedPathIndex === index"
             @click="selectPath(index)"
+            @keydown="handlePathKeydown($event, index)"
           >
             <div class="path-info">
               <i class="icon icon-folder"></i>
@@ -30,10 +34,10 @@
               </div>
             </div>
             <div class="path-actions">
-              <button class="btn-edit" @click.stop="editPath(index)" title="编辑">
+              <button class="btn-edit" @click.stop="editPath(index)" title="编辑" aria-label="编辑路径">
                 <i class="icon icon-edit"></i>
               </button>
-              <button class="btn-remove" @click.stop="removePath(index)" title="删除">
+              <button class="btn-remove" @click.stop="removePath(index)" title="删除" aria-label="删除路径">
                 <i class="icon icon-trash"></i>
               </button>
             </div>
@@ -67,7 +71,7 @@
             <UiInput
               v-model="searchQuery"
               placeholder="搜索版本..."
-              icon="icon-search"
+              prefix-icon="icon-search"
               clearable
               class="search-input"
             />
@@ -298,7 +302,7 @@ const scanCurrentPath = async () => {
       // 为每个版本标记所属路径
       scannedVersions.value = (response.data || []).map((v: ScannedVersion) => ({
         ...v,
-        path: currentPath.value?.path
+        path: currentPath.value?.path || ''
       }))
     }
   } catch (error) {
@@ -317,6 +321,12 @@ const handleRefresh = async () => {
 const selectPath = async (index: number) => {
   selectedPathIndex.value = index
   await scanCurrentPath()
+}
+
+const handlePathKeydown = async (event: KeyboardEvent, index: number) => {
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  await selectPath(index)
 }
 
 const addNewPath = () => {
@@ -515,6 +525,11 @@ const getLoaderClass = (loaderType: string | null) => {
 .path-item.active {
   background: var(--primary-color-alpha);
   border: 1px solid var(--primary-color);
+}
+
+.path-item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .path-info {
@@ -779,18 +794,18 @@ const getLoaderClass = (loaderType: string | null) => {
 }
 
 .loader-fabric {
-  background: #0091ea;
-  color: white;
+  background: rgba(14, 165, 233, 0.16);
+  color: #0369a1;
 }
 
 .loader-forge {
-  background: #f57c00;
-  color: white;
+  background: rgba(249, 115, 22, 0.16);
+  color: #c2410c;
 }
 
 .loader-quilt {
-  background: #7b1fa2;
-  color: white;
+  background: rgba(168, 85, 247, 0.16);
+  color: #7e22ce;
 }
 
 .status-badge {

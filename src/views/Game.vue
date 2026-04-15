@@ -24,16 +24,17 @@
             <span class="text-secondary">未找到游戏版本</span>
           </div>
           
-          <div
+          <button
             v-else
-            v-for="(ver, index) in versions"
+            v-for="ver in versions"
             :key="ver.id"
+            type="button"
             @click="selectVersion(ver.id)"
             :class="['version-item', { active: selectedVersion === ver.id }]"
           >
             <span class="version-name">{{ ver.id }}</span>
             <span class="version-tag">{{ ver.type }}</span>
-          </div>
+          </button>
         </div>
 
         <div class="launch-section">
@@ -49,7 +50,12 @@
           </UiButton>
         </div>
 
-        <div v-if="statusMsg" :class="['status-msg', `text-${statusType}`]">
+        <div
+          v-if="statusMsg"
+          :class="['status-msg', `text-${statusType}`]"
+          role="status"
+          aria-live="polite"
+        >
           {{ statusMsg }}
         </div>
       </UiCard>
@@ -87,8 +93,11 @@ async function loadVersions() {
       showStatus('未设置游戏目录', 'error')
       return
     }
+    const gamePaths = configRes.data.minecraft_paths
+      .map((item) => typeof item === 'string' ? item : item.path)
+      .filter(Boolean)
     
-    const scanRes = await api.scanVersions(configRes.data.minecraft_paths)
+    const scanRes = await api.scanVersions(gamePaths)
     if (scanRes.success && scanRes.data) {
       versions.value = scanRes.data
         .filter((v: any) => v.status === 'success')

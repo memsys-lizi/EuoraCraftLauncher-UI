@@ -10,7 +10,7 @@
 
 /* --- 标题栏 --- */
 .title-bar {
-  height: 32px;
+  height: 40px;
   width: 100%;
   background-color: var(--bg-titlebar);
   border-bottom: 1px solid var(--border-color);

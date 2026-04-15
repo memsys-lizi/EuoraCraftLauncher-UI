@@ -31,7 +31,7 @@
       </div>
       
       <UiCard
-        v-for="(mod, index) in filteredMods"
+        v-for="mod in filteredMods"
         :key="mod.id"
         class="mod-card"
         hoverable
@@ -162,6 +162,7 @@ onMounted(() => {
   flex: 1;
 }
 
+
 .mod-card {
   background-color: var(--bg-surface);
   border-radius: var(--radius-lg);
@@ -227,6 +228,7 @@ onMounted(() => {
   font-size: 12px;
   color: var(--text-secondary);
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;

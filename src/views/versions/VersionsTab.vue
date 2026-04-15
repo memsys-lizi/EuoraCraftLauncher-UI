@@ -23,7 +23,7 @@
         <UiInput
           v-model="searchQuery"
           placeholder="搜索版本..."
-          icon="icon-search"
+          prefix-icon="icon-search"
           clearable
           class="search-input"
         />

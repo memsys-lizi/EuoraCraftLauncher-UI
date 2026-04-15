@@ -29,7 +29,7 @@ const activeTab = ref('manage')
 const tabs = [
   { id: 'manage', label: '管理', icon: 'icon-settings' },
   { id: 'versions', label: '版本', icon: 'icon-cube' },
-  { id: 'mods', label: '模组', icon: 'icon-cube' }
+  { id: 'mods', label: '模组', icon: 'icon-grid' }
 ]
 
 onMounted(() => {

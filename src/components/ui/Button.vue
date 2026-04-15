@@ -1,5 +1,6 @@
 <template>
   <button
+    type="button"
     class="ui-btn"
     :class="[
       `btn-${variant}`,
@@ -7,10 +8,11 @@
       { 'is-loading': loading, 'is-disabled': disabled }
     ]"
     :disabled="disabled || loading"
+    :aria-busy="loading"
     @click="handleClick"
   >
     <span v-if="loading" class="loading-spinner">
-      <i class="icon icon-loading spin" />
+      <i class="icon icon-spinner spin" />
     </span>
     <span v-else-if="icon" class="btn-icon">
       <i :class="['icon', icon]" />
@@ -65,6 +67,7 @@ const handleClick = (event: MouseEvent) => {
   overflow: hidden;
   user-select: none;
   white-space: nowrap;
+  min-height: 36px;
 }
 
 .btn-icon {
@@ -76,12 +79,12 @@ const handleClick = (event: MouseEvent) => {
 .btn-primary {
   background-color: var(--color-primary);
   color: white;
-  box-shadow: 0 2px 4px rgba(0, 120, 212, 0.2);
+  box-shadow: 0 8px 20px rgba(var(--color-primary-rgb), 0.18);
 }
 
 .btn-primary:hover:not(:disabled) {
   background-color: var(--color-primary-hover);
-  box-shadow: 0 4px 8px rgba(0, 120, 212, 0.3);
+  box-shadow: 0 12px 24px rgba(var(--color-primary-rgb), 0.24);
   transform: translateY(-1px);
 }
 
@@ -103,7 +106,7 @@ const handleClick = (event: MouseEvent) => {
 }
 
 .btn-outline:hover:not(:disabled) {
-  background-color: rgba(0, 120, 212, 0.1);
+  background-color: var(--color-primary-light);
 }
 
 .btn-text {
@@ -112,7 +115,7 @@ const handleClick = (event: MouseEvent) => {
 }
 
 .btn-text:hover:not(:disabled) {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: var(--hover-bg);
   color: var(--text-primary);
 }
 
@@ -122,8 +125,8 @@ const handleClick = (event: MouseEvent) => {
 }
 
 .btn-danger:hover:not(:disabled) {
-  background-color: #d13438;
-  box-shadow: 0 4px 8px rgba(216, 59, 1, 0.3);
+  background-color: #dc2626;
+  box-shadow: 0 12px 24px rgba(239, 68, 68, 0.22);
 }
 
 .btn-sm {
@@ -152,6 +155,11 @@ const handleClick = (event: MouseEvent) => {
 
 .is-loading {
   cursor: wait;
+}
+
+.ui-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .spin {

@@ -1,6 +1,6 @@
-import { ref, computed, watch, type Ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { GlobalTheme, GlobalThemeOverrides } from 'naive-ui'
-import { darkTheme, lightTheme } from 'naive-ui'
+import { darkTheme } from 'naive-ui'
 import { getBackgroundConfig, getBackgroundImage, getThemeConfig, updateThemeConfig } from '@/utils/api'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
@@ -27,16 +27,91 @@ export const presetColors = [
   { name: '热情红', value: '#FF6B6B' },
 ]
 
-// 主题色配置
+interface ThemeColors {
+  primary: string
+  primaryHover: string
+  primaryPressed: string
+  primaryLight: string
+  success: string
+  warning: string
+  error: string
+  info: string
+  background: string
+  backgroundHover: string
+  surface: string
+  text: string
+  textSecondary: string
+  border: string
+  shadow: string
+}
+
+function clamp(value: number, min = 0, max = 255) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function normalizeHex(color: string) {
+  const value = color.trim().replace('#', '')
+  if (value.length === 3) {
+    return `#${value.split('').map((char) => char + char).join('')}`.toUpperCase()
+  }
+  if (value.length === 6) {
+    return `#${value}`.toUpperCase()
+  }
+  return '#87CEEB'
+}
+
+function hexToRgb(color: string) {
+  const normalized = normalizeHex(color).replace('#', '')
+  const int = Number.parseInt(normalized, 16)
+  return {
+    r: (int >> 16) & 255,
+    g: (int >> 8) & 255,
+    b: int & 255,
+  }
+}
+
+function rgbToHex(r: number, g: number, b: number) {
+  return `#${[r, g, b]
+    .map((value) => clamp(value).toString(16).padStart(2, '0'))
+    .join('')}`.toUpperCase()
+}
+
+function mix(color: string, target: string, amount: number) {
+  const sourceRgb = hexToRgb(color)
+  const targetRgb = hexToRgb(target)
+  const weight = Math.min(1, Math.max(0, amount))
+
+  return rgbToHex(
+    Math.round(sourceRgb.r + (targetRgb.r - sourceRgb.r) * weight),
+    Math.round(sourceRgb.g + (targetRgb.g - sourceRgb.g) * weight),
+    Math.round(sourceRgb.b + (targetRgb.b - sourceRgb.b) * weight),
+  )
+}
+
+function rgba(color: string, alpha: number) {
+  const { r, g, b } = hexToRgb(color)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+function createPrimaryScale(primary: string, isDark: boolean) {
+  const normalized = normalizeHex(primary)
+  return {
+    primary: normalized,
+    primaryHover: isDark ? mix(normalized, '#FFFFFF', 0.16) : mix(normalized, '#000000', 0.12),
+    primaryPressed: isDark ? mix(normalized, '#FFFFFF', 0.08) : mix(normalized, '#000000', 0.22),
+    primaryLight: rgba(normalized, isDark ? 0.22 : 0.14),
+    primaryRgb: (() => {
+      const { r, g, b } = hexToRgb(normalized)
+      return `${r}, ${g}, ${b}`
+    })(),
+  }
+}
+
 const themeColors = {
   light: {
-    primary: '#87CEEB',
-    primaryHover: '#5DADE2',
-    primaryPressed: '#4A9FD4',
     success: '#52C41A',
     warning: '#FAAD14',
     error: '#FF6B6B',
-    info: '#87CEEB',
     background: 'rgba(248, 250, 252, 0.65)',
     backgroundHover: 'rgba(255, 255, 255, 0.8)',
     surface: 'rgba(255, 255, 255, 0.9)',
@@ -46,13 +121,9 @@ const themeColors = {
     shadow: 'rgba(135, 206, 235, 0.2)',
   },
   dark: {
-    primary: '#87CEEB',
-    primaryHover: '#A8D8F0',
-    primaryPressed: '#6BB9E0',
     success: '#6DD576',
     warning: '#FFD666',
     error: '#FF7875',
-    info: '#87CEEB',
     background: 'rgba(15, 23, 42, 0.65)',
     backgroundHover: 'rgba(30, 41, 59, 0.8)',
     surface: 'rgba(30, 41, 59, 0.9)',
@@ -60,12 +131,20 @@ const themeColors = {
     textSecondary: '#94A3B8',
     border: 'rgba(135, 206, 235, 0.2)',
     shadow: 'rgba(0, 0, 0, 0.4)',
-  }
-}
+  },
+} as const
 
 // 创建主题配置
 function createThemeOverrides(isDark: boolean, primary: string): GlobalThemeOverrides {
-  const colors = isDark ? themeColors.dark : themeColors.light
+  const neutralColors = isDark ? themeColors.dark : themeColors.light
+  const primaryScale = createPrimaryScale(primary, isDark)
+  const colors: ThemeColors = {
+    ...neutralColors,
+    ...primaryScale,
+    info: primaryScale.primary,
+    border: rgba(primaryScale.primary, isDark ? 0.24 : 0.22),
+    shadow: rgba(primaryScale.primary, isDark ? 0.24 : 0.14),
+  }
   
   return {
     common: {
@@ -96,6 +175,7 @@ function createThemeOverrides(isDark: boolean, primary: string): GlobalThemeOver
       textColorHover: colors.primary,
       border: `1px solid ${colors.border}`,
       borderHover: `1px solid ${colors.primary}`,
+      borderPressed: `1px solid ${colors.primaryPressed}`,
     },
     Card: {
       color: colors.background,
@@ -150,6 +230,8 @@ const backgroundImagePath = ref('') // 背景图路径
 const blurAmount = ref(6)
 const isDark = ref(false)
 const systemDark = ref(false)
+let systemThemeListenerInitialized = false
+let initThemePromise: Promise<void> | null = null
 
 const naiveTheme = computed<GlobalTheme | null>(() => {
   return isDark.value ? darkTheme : null
@@ -159,10 +241,14 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => {
   return createThemeOverrides(isDark.value, primaryColor.value)
 })
 
-const colors = computed(() => isDark.value ? themeColors.dark : themeColors.light)
+const colors = computed(() => ({
+  ...(isDark.value ? themeColors.dark : themeColors.light),
+  ...createPrimaryScale(primaryColor.value, isDark.value),
+}))
 
 // 监听系统主题
 function initSystemThemeListener() {
+  if (systemThemeListenerInitialized) return
   const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
   systemDark.value = mediaQuery.matches
   
@@ -172,6 +258,7 @@ function initSystemThemeListener() {
       updateTheme()
     }
   })
+  systemThemeListenerInitialized = true
 }
 
 function updateTheme() {
@@ -181,11 +268,17 @@ function updateTheme() {
     isDark.value = themeMode.value === 'dark'
   }
   
+  const primaryScale = createPrimaryScale(primaryColor.value, isDark.value)
+
   // 更新 HTML 属性
   document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
   
   // 更新 CSS 变量
-  document.documentElement.style.setProperty('--color-primary', primaryColor.value)
+  document.documentElement.style.setProperty('--color-primary', primaryScale.primary)
+  document.documentElement.style.setProperty('--color-primary-rgb', primaryScale.primaryRgb)
+  document.documentElement.style.setProperty('--color-primary-hover', primaryScale.primaryHover)
+  document.documentElement.style.setProperty('--color-primary-active', primaryScale.primaryPressed)
+  document.documentElement.style.setProperty('--color-primary-light', primaryScale.primaryLight)
   document.documentElement.style.setProperty('--bg-image', backgroundImage.value ? `url(${backgroundImage.value})` : 'none')
   document.documentElement.style.setProperty('--bg-blur', `${blurAmount.value}px`)
   
@@ -272,81 +365,91 @@ function toggleTheme() {
 }
 
 export async function initTheme() {
-  try {
-    // 尝试从后端API获取主题配置
-    if (window.pywebview && window.pywebview.api) {
-      const config = await getThemeConfig()
-      
-      if (config.success && config.data) {
-        themeMode.value = config.data.mode as ThemeMode || 'system'
-        primaryColor.value = config.data.primary_color || '#87CEEB'
-        blurAmount.value = config.data.blur_amount || 6
-      } else {
-        themeMode.value = 'system'
-        primaryColor.value = '#87CEEB'
-        blurAmount.value = 6
-      }
-      
-      // 从后端配置加载后，需要重新加载背景图片
+  if (initThemePromise) {
+    await initThemePromise
+    return
+  }
+
+  initThemePromise = (async () => {
+    try {
+      // 尝试从后端API获取主题配置
       if (window.pywebview && window.pywebview.api) {
-        // 获取背景图配置
-        const bgConfig = await getBackgroundConfig()
-        if (bgConfig.success && bgConfig.data) {
-          // 如果有背景图路径，加载背景图片数据
-          if (bgConfig.data.path) {
-            backgroundImagePath.value = bgConfig.data.path
-            const imgData = await getBackgroundImage()
-            if (imgData.success && imgData.data?.base64) {
-              backgroundImage.value = imgData.data.base64
+        const config = await getThemeConfig()
+        
+        if (config.success && config.data) {
+          themeMode.value = config.data.mode as ThemeMode || 'system'
+          primaryColor.value = config.data.primary_color || '#87CEEB'
+          blurAmount.value = config.data.blur_amount || 6
+        } else {
+          themeMode.value = 'system'
+          primaryColor.value = '#87CEEB'
+          blurAmount.value = 6
+        }
+        
+        // 从后端配置加载后，需要重新加载背景图片
+        if (window.pywebview && window.pywebview.api) {
+          // 获取背景图配置
+          const bgConfig = await getBackgroundConfig()
+          if (bgConfig.success && bgConfig.data) {
+            // 如果有背景图路径，加载背景图片数据
+            if (bgConfig.data.path) {
+              backgroundImagePath.value = bgConfig.data.path
+              const imgData = await getBackgroundImage()
+              if (imgData.success && imgData.data?.base64) {
+                backgroundImage.value = imgData.data.base64
+              }
+            } else {
+              backgroundImage.value = ''
+              backgroundImagePath.value = ''
             }
-          } else {
-            backgroundImage.value = ''
-            backgroundImagePath.value = ''
-          }
-          // 如果背景配置中有模糊值，覆盖主题配置中的模糊值
-          if (typeof bgConfig.data.blur === 'number') {
-            blurAmount.value = bgConfig.data.blur
-            console.log('从背景配置中读取模糊值:', bgConfig.data.blur)
+            // 如果背景配置中有模糊值，覆盖主题配置中的模糊值
+            if (typeof bgConfig.data.blur === 'number') {
+              blurAmount.value = bgConfig.data.blur
+              console.log('从背景配置中读取模糊值:', bgConfig.data.blur)
+            }
           }
         }
-      }
-    } else {
-      // 如果没有后端API，则从localStorage加载（向后兼容）
-      const saved = localStorage.getItem(THEME_KEY)
-      if (saved) {
-        const state: ThemeState = JSON.parse(saved)
-        themeMode.value = state.mode
-      }
-      
-      const savedColor = localStorage.getItem(COLOR_KEY)
-      if (savedColor) {
-        primaryColor.value = savedColor
       } else {
-        primaryColor.value = '#87CEEB' // 默认天蓝色
-      }
+        // 如果没有后端API，则从localStorage加载（向后兼容）
+        const saved = localStorage.getItem(THEME_KEY)
+        if (saved) {
+          const state: ThemeState = JSON.parse(saved)
+          themeMode.value = state.mode
+        }
+        
+        const savedColor = localStorage.getItem(COLOR_KEY)
+        if (savedColor) {
+          primaryColor.value = savedColor
+        } else {
+          primaryColor.value = '#87CEEB' // 默认天蓝色
+        }
 
-      const savedBgImage = localStorage.getItem(BG_IMAGE_KEY)
-      if (savedBgImage) {
-        backgroundImage.value = savedBgImage
-      } else {
-        backgroundImage.value = '' // 默认无背景图
-      }
+        const savedBgImage = localStorage.getItem(BG_IMAGE_KEY)
+        if (savedBgImage) {
+          backgroundImage.value = savedBgImage
+        } else {
+          backgroundImage.value = '' // 默认无背景图
+        }
 
-      const savedBlur = localStorage.getItem(BLUR_KEY)
-      if (savedBlur) {
-        blurAmount.value = parseInt(savedBlur)
+        const savedBlur = localStorage.getItem(BLUR_KEY)
+        if (savedBlur) {
+          blurAmount.value = parseInt(savedBlur)
+        }
       }
+    } catch (error) {
+      console.error('初始化主题失败:', error)
+      themeMode.value = 'system'
+      primaryColor.value = '#87CEEB'
+      backgroundImage.value = '' // 默认无背景图
+      blurAmount.value = 6
     }
-  } catch (error) {
-    console.error('初始化主题失败:', error)
-    themeMode.value = 'system'
-    primaryColor.value = '#87CEEB'
-    backgroundImage.value = '' // 默认无背景图
-    blurAmount.value = 6
-  }
-  
-  initSystemThemeListener()
-  updateTheme()
+    
+    initSystemThemeListener()
+    updateTheme()
+  })()
+
+  await initThemePromise
+  initThemePromise = null
 }
 
 export function useTheme() {

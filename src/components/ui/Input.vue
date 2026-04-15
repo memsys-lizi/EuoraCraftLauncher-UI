@@ -1,14 +1,16 @@
 <template>
   <div class="ui-input-wrapper" :class="{ 'is-focused': isFocused, 'is-disabled': disabled }">
-    <i v-if="prefixIcon" :class="['icon', prefixIcon, 'prefix-icon']" />
+    <i v-if="leadingIcon" :class="['icon', leadingIcon, 'prefix-icon']" />
     
     <input
       ref="inputRef"
+      :id="id"
       :value="modelValue"
       :type="type"
       :placeholder="placeholder"
       :disabled="disabled"
       :readonly="readonly"
+      :aria-label="ariaLabel"
       class="ui-input"
       @input="handleInput"
       @focus="isFocused = true"
@@ -16,28 +18,35 @@
       @keydown.enter="$emit('enter')"
     />
     
-    <i 
+    <button
       v-if="clearable && modelValue" 
-      class="icon icon-close clear-icon" 
+      type="button"
+      class="clear-icon"
+      aria-label="清空输入"
       @click="handleClear"
-    />
+    >
+      <i class="icon icon-close" />
+    </button>
     
     <i v-if="suffixIcon" :class="['icon', suffixIcon, 'suffix-icon']" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = withDefaults(defineProps<{
   modelValue: string | number
+  id?: string
   type?: string
   placeholder?: string
   disabled?: boolean
   readonly?: boolean
   clearable?: boolean
+  icon?: string
   prefixIcon?: string
   suffixIcon?: string
+  ariaLabel?: string
 }>(), {
   type: 'text',
   modelValue: '',
@@ -54,6 +63,7 @@ const emit = defineEmits<{
 
 const inputRef = ref<HTMLInputElement | null>(null)
 const isFocused = ref(false)
+const leadingIcon = computed(() => props.prefixIcon || props.icon)
 
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement
@@ -72,11 +82,12 @@ const handleClear = () => {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: 40px;
   padding: 8px 12px;
-  background-color: var(--bg-app);
+  background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
   width: 100%;
   position: relative;
 }
@@ -88,8 +99,8 @@ const handleClear = () => {
 
 .ui-input-wrapper.is-focused {
   border-color: var(--color-primary);
-  background-color: var(--bg-surface);
-  box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+  background-color: var(--bg-surface-active);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .ui-input-wrapper.is-disabled {
@@ -122,16 +133,27 @@ const handleClear = () => {
 }
 
 .clear-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
   cursor: pointer;
   font-size: 14px;
   padding: 2px;
   border-radius: 50%;
   transition: all 0.2s ease;
+  color: var(--text-secondary);
 }
 
 .clear-icon:hover {
   background-color: var(--bg-surface-active);
   color: var(--text-primary);
+}
+
+.clear-icon:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .prefix-icon {

@@ -46,7 +46,7 @@ export interface BackgroundConfig {
 }
 
 export interface GameConfig {
-  minecraft_paths: string[]
+  minecraft_paths: Array<string | { name: string; path: string }>
   java_auto_select: boolean
   java_path: string
   memory_size: number

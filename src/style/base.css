@@ -11,6 +11,7 @@
 :root {
   /* --- 调色板 (Light Mode) --- */
   --color-primary: #3b82f6;
+  --color-primary-rgb: 59, 130, 246;
   --color-primary-hover: #2563eb;
   --color-primary-active: #1d4ed8;
   --color-primary-light: rgba(59, 130, 246, 0.1);
@@ -29,6 +30,20 @@
   --bg-titlebar: rgba(255, 255, 255, 0.60);
   --bg-overlay: rgba(15, 23, 42, 0.2);
   --bg-card: rgba(255, 255, 255, 0.70);
+  --hover-bg: rgba(var(--color-primary-rgb), 0.08);
+
+  /* --- 兼容旧变量命名 --- */
+  --background-primary: var(--bg-surface);
+  --background-secondary: var(--bg-card);
+  --background-tertiary: var(--bg-surface-hover);
+  --primary-color: var(--color-primary);
+  --primary-color-alpha: rgba(var(--color-primary-rgb), 0.12);
+  --success-color: var(--color-success);
+  --success-background: rgba(16, 185, 129, 0.14);
+  --warning-color: var(--color-warning);
+  --warning-background: rgba(245, 158, 11, 0.14);
+  --error-color: var(--color-error);
+  --error-background: rgba(239, 68, 68, 0.14);
 
   /* --- 文本色 --- */
   --text-primary: #0f172a;
@@ -72,6 +87,7 @@
 /* --- Dark Mode - 同样调整透明度 --- */
 [data-theme="dark"] {
   --color-primary: #60a5fa;
+  --color-primary-rgb: 96, 165, 250;
   --color-primary-hover: #93c5fd;
   --color-primary-active: #3b82f6;
   --color-primary-light: rgba(96, 165, 250, 0.15);
@@ -89,6 +105,7 @@
   --bg-titlebar: rgba(30, 41, 59, 0.60);
   --bg-overlay: rgba(0, 0, 0, 0.6);
   --bg-card: rgba(45, 55, 75, 0.65);
+  --hover-bg: rgba(var(--color-primary-rgb), 0.16);
 
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
@@ -104,6 +121,19 @@
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+
+  /* --- 兼容旧变量命名 --- */
+  --background-primary: var(--bg-surface);
+  --background-secondary: var(--bg-card);
+  --background-tertiary: var(--bg-surface-hover);
+  --primary-color: var(--color-primary);
+  --primary-color-alpha: rgba(var(--color-primary-rgb), 0.18);
+  --success-color: var(--color-success);
+  --success-background: rgba(52, 211, 153, 0.18);
+  --warning-color: var(--color-warning);
+  --warning-background: rgba(251, 191, 36, 0.18);
+  --error-color: var(--color-error);
+  --error-background: rgba(248, 113, 113, 0.18);
 }
 
 /* ==================== 基础重置 ==================== */
@@ -123,7 +153,7 @@ html, body {
   color: var(--text-primary);
   background-color: var(--bg-app);
   -webkit-font-smoothing: antialiased;
-  user-select: none;
+  user-select: auto;
   transition: background-color 0.3s var(--ease-normal), color 0.3s var(--ease-normal);
 }
 
@@ -152,11 +182,17 @@ html, body {
 .icon-search::before   { content: "\E721"; }
 .icon-filter::before   { content: "\E71C"; }
 .icon-add::before      { content: "\E710"; }
+.icon-plus::before     { content: "\E710"; }
 .icon-delete::before   { content: "\E74D"; }
+.icon-trash::before    { content: "\E74D"; }
 .icon-edit::before     { content: "\E70F"; }
 .icon-download::before { content: "\E896"; }
 .icon-folder::before   { content: "\E8B7"; }
 .icon-game::before     { content: "\E7FC"; }
+.icon-play::before     { content: "\E768"; }
+.icon-refresh::before  { content: "\E72C"; }
+.icon-spinner::before  { content: "\E895"; }
+.icon-loading::before  { content: "\E895"; }
 .icon-brush::before    { content: "\E790"; }
 .icon-globe::before    { content: "\E774"; }
 .icon-moon::before     { content: "\E708"; }
@@ -167,6 +203,9 @@ html, body {
 .icon-help::before     { content: "\E9D9"; }
 .icon-arrow-right::before { content: "\E76C"; }
 .icon-arrow-left::before  { content: "\E76B"; }
+.icon-lab::before      { content: "\E7BE"; }
+.icon-fire::before     { content: "\EC27"; }
+.icon-grid::before     { content: "\ECA5"; }
 
 /* ==================== 通用工具类 ==================== */
 .flex-center {
@@ -246,4 +285,13 @@ button, .action-btn {
 
 button:active, .action-btn:active {
   transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

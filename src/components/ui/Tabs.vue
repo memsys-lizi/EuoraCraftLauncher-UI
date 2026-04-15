@@ -1,19 +1,25 @@
 <template>
-  <nav class="ui-tabs" @mouseleave="handleMouseLeave">
+  <nav class="ui-tabs" role="tablist" @mouseleave="handleMouseLeave">
     <div class="active-background" ref="activeBgRef"></div>
     <div class="tabs-indicator" ref="indicatorRef"></div>
-    <div
+    <button
       v-for="(tab, index) in items"
       :key="tab.id"
       :ref="el => { if (el) tabRefs[index] = el as HTMLElement }"
+      type="button"
       class="tab-item"
       :class="{ active: modelValue === tab.id }"
+      role="tab"
+      :id="`tab-${tab.id}`"
+      :aria-selected="modelValue === tab.id"
+      :tabindex="modelValue === tab.id ? 0 : -1"
       @click="handleClick(tab.id)"
       @mouseenter="handleMouseEnter(index)"
+      @keydown="handleKeydown($event, index)"
     >
       <i v-if="tab.icon" :class="['icon', tab.icon]" />
       {{ tab.label }}
-    </div>
+    </button>
   </nav>
 </template>
 
@@ -74,6 +80,37 @@ const handleClick = (id: string) => {
   emit('update:modelValue', id)
 }
 
+const focusTab = (index: number) => {
+  const boundedIndex = (index + props.items.length) % props.items.length
+  const nextTab = tabRefs.value[boundedIndex]
+  if (!nextTab) return
+  emit('update:modelValue', props.items[boundedIndex].id)
+  nextTick(() => nextTab.focus())
+}
+
+const handleKeydown = (event: KeyboardEvent, index: number) => {
+  switch (event.key) {
+    case 'ArrowRight':
+    case 'ArrowDown':
+      event.preventDefault()
+      focusTab(index + 1)
+      break
+    case 'ArrowLeft':
+    case 'ArrowUp':
+      event.preventDefault()
+      focusTab(index - 1)
+      break
+    case 'Home':
+      event.preventDefault()
+      focusTab(0)
+      break
+    case 'End':
+      event.preventDefault()
+      focusTab(props.items.length - 1)
+      break
+  }
+}
+
 watch(() => props.modelValue, () => {
   const index = props.items.findIndex(t => t.id === props.modelValue)
   if (index !== -1) {
@@ -128,15 +165,17 @@ onMounted(() => {
 .active-background {
   position: absolute;
   background-color: var(--color-primary-light);
+  box-shadow: inset 0 0 0 1px rgba(var(--color-primary-rgb), 0.12);
   border-radius: var(--radius-md);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
   opacity: 0;
-  z-index: 0;
+  z-index: 1;
 }
 
 .tab-item {
   position: relative;
+  border: none;
   padding: 8px 16px;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -147,11 +186,13 @@ onMounted(() => {
   font-weight: 500;
   color: var(--text-secondary);
   transition: all 0.2s ease;
-  z-index: 1;
+  z-index: 3;
   user-select: none;
+  background: transparent;
+  font-family: inherit;
 }
 
-.tab-item:hover {
+.tab-item:hover:not(.active) {
   color: var(--color-primary);
   background-color: var(--bg-surface-hover);
 }
@@ -159,6 +200,12 @@ onMounted(() => {
 .tab-item.active {
   color: var(--color-primary);
   font-weight: 600;
+  background: transparent;
+}
+
+.tab-item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .tab-item .icon {

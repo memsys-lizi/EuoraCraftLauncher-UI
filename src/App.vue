@@ -10,10 +10,11 @@
         <n-notification-provider>
           <div id="app">
             <div class="app-background"></div>
+            <a href="#main-content" class="skip-link">跳到主要内容</a>
             <TitleBar class="app-layer" />
             <div class="app-container app-layer">
               <SideBar />
-              <main class="main-content">
+              <main id="main-content" class="main-content" tabindex="-1">
                 <router-view v-slot="{ Component }">
                   <transition 
                     name="page" 
@@ -88,7 +89,7 @@ onMounted(async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #f3f3f3;
+  background-color: var(--bg-app);
   background-image: var(--bg-image);
   background-size: cover;
   background-position: center;
@@ -108,7 +109,7 @@ onMounted(async () => {
 }
 
 [data-theme="dark"] .app-background {
-  background-color: #202020;
+  background-color: var(--bg-app);
 }
 
 [data-theme="dark"] .app-background::after {
@@ -120,22 +121,24 @@ onMounted(async () => {
   z-index: 1;
 }
 
-.page-enter-active,
-.page-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s var(--ease-spring);
-}
-
-.page-enter-from {
-  opacity: 0;
-  transform: translateY(8px);
-}
-
-.page-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
 .main-content {
   position: relative;
+}
+
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -48px;
+  z-index: 2000;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-active);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+}
+
+.skip-link:focus {
+  top: 12px;
 }
 </style>

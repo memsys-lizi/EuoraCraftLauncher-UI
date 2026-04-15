@@ -13,7 +13,8 @@
         </div>
         <div class="setting-control">
           <div class="theme-options">
-            <div
+            <button
+              type="button"
               class="theme-card"
               :class="{ active: currentSettings.mode === 'light' }"
               @click="handleThemeChange('light')"
@@ -22,8 +23,9 @@
                 <i class="icon icon-sun" />
               </div>
               <span class="theme-label">浅色</span>
-            </div>
-            <div
+            </button>
+            <button
+              type="button"
               class="theme-card"
               :class="{ active: currentSettings.mode === 'dark' }"
               @click="handleThemeChange('dark')"
@@ -32,8 +34,9 @@
                 <i class="icon icon-moon" />
               </div>
               <span class="theme-label">深色</span>
-            </div>
-            <div
+            </button>
+            <button
+              type="button"
               class="theme-card"
               :class="{ active: currentSettings.mode === 'system' }"
               @click="handleThemeChange('system')"
@@ -42,7 +45,7 @@
                 <i class="icon icon-settings" />
               </div>
               <span class="theme-label">跟随系统</span>
-            </div>
+            </button>
           </div>
         </div>
       </div>
@@ -74,17 +77,19 @@
         </div>
         <div class="setting-control">
           <div class="color-presets">
-            <div
+            <button
               v-for="color in presetColors"
               :key="color.value"
+              type="button"
               class="color-preset-item"
               :style="{ backgroundColor: color.value }"
               :class="{ active: currentSettings.primaryColor === color.value }"
               :title="color.name"
+              :aria-label="`切换主题色到${color.name}`"
               @click="handleColorChange(color.value)"
             >
               <i v-if="currentSettings.primaryColor === color.value" class="icon icon-check" />
-            </div>
+            </button>
             <div class="custom-color-picker">
               <input
                 type="color"
@@ -129,18 +134,27 @@
           <div class="setting-desc">选择游戏资源下载来源</div>
         </div>
         <div class="setting-control">
-          <div class="custom-select" :class="{ open: isOpen }" ref="selectRef">
-            <div class="select-trigger" @click="toggleOpen">
+          <div class="custom-select" :class="{ open: isOpen, 'open-upward': openDirection === 'up' }" ref="selectRef">
+            <button
+              type="button"
+              class="select-trigger"
+              :aria-expanded="isOpen"
+              aria-haspopup="listbox"
+              @click="toggleOpen"
+              @keydown.escape="isOpen = false"
+            >
               <span class="selected-text">{{ selectedDownloadSource?.label || '请选择' }}</span>
               <i class="icon icon-arrow-right select-arrow" :class="{ rotated: isOpen }" />
-            </div>
+            </button>
             <transition name="select-dropdown">
-              <div v-show="isOpen" class="select-dropdown">
-                <div
+              <div v-show="isOpen" class="select-dropdown" role="listbox">
+                <button
                   v-for="option in downloadOptions"
                   :key="option.value"
+                  type="button"
                   class="select-option"
                   :class="{ active: currentSettings.downloadSource === option.value }"
+                  :aria-selected="currentSettings.downloadSource === option.value"
                   @click="handleDownloadSourceChange(option.value)"
                 >
                   <div class="option-content">
@@ -148,7 +162,7 @@
                     <span class="option-desc">{{ option.desc }}</span>
                   </div>
                   <i v-if="currentSettings.downloadSource === option.value" class="icon icon-check check-icon" />
-                </div>
+                </button>
               </div>
             </transition>
           </div>
@@ -219,6 +233,7 @@ const currentSettings = computed(() => ({
 }))
 
 const isOpen = ref(false)
+const openDirection = ref<'down' | 'up'>('down')
 const selectRef = ref<HTMLElement | null>(null)
 
 const downloadOptions: Array<{value: 'official' | 'bmclapi' | 'mcbbs', label: string, desc: string}> = [
@@ -232,7 +247,23 @@ const selectedDownloadSource = computed(() =>
 )
 
 const toggleOpen = () => {
+  if (!isOpen.value) {
+    updateDropdownDirection()
+  }
   isOpen.value = !isOpen.value
+}
+
+const updateDropdownDirection = () => {
+  const selectEl = selectRef.value
+  if (!selectEl) return
+
+  const rect = selectEl.getBoundingClientRect()
+  const viewportHeight = window.innerHeight
+  const estimatedDropdownHeight = Math.min(downloadOptions.length * 56 + 8, 280)
+  const spaceBelow = viewportHeight - rect.bottom
+  const spaceAbove = rect.top
+
+  openDirection.value = spaceBelow < estimatedDropdownHeight && spaceAbove > spaceBelow ? 'up' : 'down'
 }
 
 const updateField = (field: string, value: any) => {
@@ -354,10 +385,14 @@ const handleClickOutside = (e: MouseEvent) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  window.addEventListener('resize', updateDropdownDirection)
+  window.addEventListener('scroll', updateDropdownDirection, true)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('resize', updateDropdownDirection)
+  window.removeEventListener('scroll', updateDropdownDirection, true)
   if (bgTimer) clearTimeout(bgTimer)
 })
 </script>

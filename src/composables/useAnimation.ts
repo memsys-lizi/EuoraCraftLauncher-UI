@@ -1,6 +1,10 @@
 import { ref, nextTick } from 'vue'
 import gsap from 'gsap'
 
+function prefersReducedMotion() {
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
 // 淡入动画
 export function useFadeIn(
   elementRef: any, 
@@ -10,6 +14,10 @@ export function useFadeIn(
   
   const animate = () => {
     if (!elementRef.value) return
+    if (prefersReducedMotion()) {
+      gsap.set(elementRef.value, { opacity: 1, y: 0 })
+      return
+    }
     
     gsap.fromTo(elementRef.value,
       { opacity: 0, y },
@@ -41,6 +49,10 @@ export function useStagger(
     
     const items = container.querySelectorAll(itemSelector)
     if (items.length === 0) return
+    if (prefersReducedMotion()) {
+      gsap.set(items, { opacity: 1, y: 0 })
+      return
+    }
 
     gsap.fromTo(items,
       { opacity: 0, y: 15 },
@@ -61,10 +73,19 @@ export function useStagger(
 // 页面过渡
 export function usePageTransition() {
   const beforeEnter = (el: Element) => {
+    if (prefersReducedMotion()) {
+      gsap.set(el, { opacity: 1, y: 0 })
+      return
+    }
     gsap.set(el, { opacity: 0, y: 10 })
   }
   
   const enter = (el: Element, done: () => void) => {
+    if (prefersReducedMotion()) {
+      gsap.set(el, { opacity: 1, y: 0 })
+      done()
+      return
+    }
     gsap.to(el, {
       opacity: 1,
       y: 0,
@@ -75,6 +96,10 @@ export function usePageTransition() {
   }
   
   const leave = (el: Element, done: () => void) => {
+    if (prefersReducedMotion()) {
+      done()
+      return
+    }
     gsap.to(el, {
       opacity: 0,
       y: -10,
@@ -90,6 +115,7 @@ export function usePageTransition() {
 // 按钮点击反馈
 export function useButtonFeedback() {
   const onClick = (event: MouseEvent) => {
+    if (prefersReducedMotion()) return
     const btn = event.currentTarget as HTMLElement
     gsap.to(btn, {
       scale: 0.97,
